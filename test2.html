@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍎 사과 게임 - 합이 10!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Jua', sans-serif;
+            background: linear-gradient(135deg, #2d5a27 0%, #1a472a 50%, #0d3320 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .game-title {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 48px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d, #ff6b6b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .game-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 18px;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.8s ease-out 0.2s both;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 15px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 28px;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .game-container {
+            position: relative;
+            background: linear-gradient(180deg, #87CEEB 0%, #b8e6b8 60%, #7CB342 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 0 100px rgba(255, 255, 255, 0.1);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .apple-grid {
+            display: grid;
+            gap: 8px;
+            position: relative;
+        }
+        
+        .apple {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            animation: appleSpawn 0.4s ease-out backwards;
+        }
+        
+        @keyframes appleSpawn {
+            from {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        
+        .apple:hover {
+            transform: scale(1.1);
+        }
+        
+        .apple.selected {
+            transform: scale(1.15);
+            filter: brightness(1.3) drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
+        }
+        
+        .apple.removing {
+            animation: appleRemove 0.5s ease-out forwards;
+        }
+        
+        @keyframes appleRemove {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .apple-body {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b);
+            border-radius: 45% 45% 50% 50%;
+            position: relative;
+            box-shadow: 
+                inset -8px -8px 20px rgba(0, 0, 0, 0.3),
+                inset 8px 8px 20px rgba(255, 255, 255, 0.2),
+                0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .apple-stem {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 12px;
+            background: linear-gradient(to bottom, #5D4037, #8B4513);
+            border-radius: 3px;
+        }
+        
+        .apple-leaf {
+            position: absolute;
+            top: -6px;
+            left: 55%;
+            width: 15px;
+            height: 10px;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            border-radius: 0 70% 0 70%;
+            transform: rotate(30deg);
+        }
+        
+        .apple-highlight {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+        }
+        
+        .apple-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 26px;
+            color: white;
+            text-shadow: 
+                2px 2px 0 rgba(0, 0, 0, 0.5),
+                -1px -1px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .apple.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+        
+        .selection-box {
+            position: fixed;
+            border: 3px dashed #FFD700;
+            background: rgba(255, 215, 0, 0.15);
+            pointer-events: none;
+            z-index: 1000;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+        
+        .sum-indicator {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Black Han Sans', sans-serif;
+            pointer-events: none;
+            z-index: 1001;
+            transition: background 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sum-indicator.valid {
+            background: rgba(76, 175, 80, 0.9);
+            border-color: #4CAF50;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+        }
+        
+        .sum-indicator.invalid {
+            background: rgba(244, 67, 54, 0.9);
+            border-color: #f44336;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+        
+        .btn {
+            font-family: 'Jua', sans-serif;
+            font-size: 18px;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 8px 25px rgba(238, 90, 36, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(238, 90, 36, 0.5);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .combo-popup {
+            position: fixed;
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.8),
+                0 0 30px rgba(255, 215, 0, 0.5);
+            pointer-events: none;
+            z-index: 1002;
+            animation: comboAnim 1s ease-out forwards;
+        }
+        
+        @keyframes comboAnim {
+            0% {
+                transform: scale(0.5) translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) translateY(-20px);
+            }
+            100% {
+                transform: scale(1) translateY(-80px);
+                opacity: 0;
+            }
+        }
+        
+        .game-complete {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            animation: fadeIn 0.5s ease-out;
+            z-index: 100;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .complete-title {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 56px;
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            margin-bottom: 20px;
+        }
+        
+        .complete-message {
+            font-size: 24px;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 20px;
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out 0.8s both;
+        }
+        
+        .instructions h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        
+        /* Decorative elements */
+        .tree {
+            position: fixed;
+            bottom: 0;
+            font-size: 120px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .tree-left { left: 20px; }
+        .tree-right { right: 20px; }
+    </style>
+</head>
+<body>
+    <div class="tree tree-left">🌳</div>
+    <div class="tree tree-right">🌳</div>
+    
+    <div class="game-header">
+        <h1 class="game-title">🍎 사과 게임</h1>
+        <p class="game-subtitle">드래그로 선택해서 합이 10이 되면 사과가 사라져요!</p>
+    </div>
+    
+    <div class="stats-bar">
+        <div class="stat-box">
+            <span class="stat-label">🎯 점수</span>
+            <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">🍎 남은 사과</span>
+            <span class="stat-value" id="remaining">0</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">✨ 콤보</span>
+            <span class="stat-value" id="combo">0</span>
+        </div>
+    </div>
+    
+    <div class="game-container" id="gameContainer">
+        <div class="apple-grid" id="appleGrid"></div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn btn-primary" id="newGameBtn">🔄 새 게임</button>
+        <button class="btn btn-secondary" id="hintBtn">💡 힌트</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>🎮 게임 방법</h3>
+        <p>마우스로 드래그하여 사과들을 선택하세요.<br>
+        선택한 사과들의 숫자 합이 <strong>10</strong>이 되면 사과가 사라집니다!</p>
+    </div>
+    
+    <div class="selection-box" id="selectionBox" style="display: none;"></div>
+    <div class="sum-indicator" id="sumIndicator" style="display: none;"></div>
+
+    <script>
+        // Game configuration
+        const ROWS = 8;
+        const COLS = 10;
+        const TARGET_SUM = 10;
+        
+        // Game state
+        let apples = [];
+        let score = 0;
+        let combo = 0;
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectedApples = new Set();
+        
+        // DOM elements
+        const appleGrid = document.getElementById('appleGrid');
+        const selectionBox = document.getElementById('selectionBox');
+        const sumIndicator = document.getElementById('sumIndicator');
+        const scoreDisplay = document.getElementById('score');
+        const remainingDisplay = document.getElementById('remaining');
+        const comboDisplay = document.getElementById('combo');
+        const gameContainer = document.getElementById('gameContainer');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        
+        // Initialize game
+        function initGame() {
+            apples = [];
+            score = 0;
+            combo = 0;
+            selectedApples.clear();
+            appleGrid.innerHTML = '';
+            
+            // Remove any completion overlay
+            const existingOverlay = gameContainer.querySelector('.game-complete');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+            
+            // Set grid template
+            appleGrid.style.gridTemplateColumns = `repeat(${COLS}, 60px)`;
+            
+            // Create apples with random numbers
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const number = Math.floor(Math.random() * 9) + 1;
+                    const index = row * COLS + col;
+                    
+                    apples.push({
+                        number: number,
+                        removed: false,
+                        row: row,
+                        col: col,
+                        index: index
+                    });
+                    
+                    const appleEl = createAppleElement(number, index);
+                    appleEl.style.animationDelay = `${(row * COLS + col) * 20}ms`;
+                    appleGrid.appendChild(appleEl);
+                }
+            }
+            
+            updateUI();
+        }
+        
+        function createAppleElement(number, index) {
+            const apple = document.createElement('div');
+            apple.className = 'apple';
+            apple.dataset.index = index;
+            
+            apple.innerHTML = `
+                <div class="apple-body">
+                    <div class="apple-stem"></div>
+                    <div class="apple-leaf"></div>
+                    <div class="apple-highlight"></div>
+                    <span class="apple-number">${number}</span>
+                </div>
+            `;
+            
+            return apple;
+        }
+        
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            comboDisplay.textContent = combo;
+            
+            const remaining = apples.filter(a => !a.removed).length;
+            remainingDisplay.textContent = remaining;
+            
+            if (remaining === 0) {
+                showGameComplete();
+            }
+        }
+        
+        function showGameComplete() {
+            const overlay = document.createElement('div');
+            overlay.className = 'game-complete';
+            overlay.innerHTML = `
+                <div class="complete-title">🎉 축하합니다!</div>
+                <div class="complete-message">모든 사과를 없앴습니다!<br>최종 점수: ${score}</div>
+                <button class="btn btn-primary" onclick="initGame()">🔄 다시 하기</button>
+            `;
+            gameContainer.appendChild(overlay);
+        }
+        
+        function getAppleElements() {
+            return document.querySelectorAll('.apple:not(.empty)');
+        }
+        
+        // Selection handling
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.btn') || e.target.closest('.game-complete')) return;
+            
+            isSelecting = true;
+            selectionStart = { x: e.clientX, y: e.clientY };
+            selectedApples.clear();
+            
+            selectionBox.style.display = 'block';
+            selectionBox.style.left = e.clientX + 'px';
+            selectionBox.style.top = e.clientY + 'px';
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
+            
+            updateSelection(e);
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isSelecting) return;
+            updateSelection(e);
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            if (!isSelecting) return;
+            
+            isSelecting = false;
+            selectionBox.style.display = 'none';
+            sumIndicator.style.display = 'none';
+            
+            // Check if selection is valid
+            if (selectedApples.size > 0) {
+                const sum = calculateSum();
+                
+                if (sum === TARGET_SUM) {
+                    removeSelectedApples();
+                } else {
+                    // Invalid selection - shake and deselect
+                    selectedApples.forEach(index => {
+                        const el = document.querySelector(`.apple[data-index="${index}"]`);
+                        if (el) {
+                            el.classList.remove('selected');
+                        }
+                    });
+                    combo = 0;
+                    updateUI();
+                }
+            }
+            
+            selectedApples.clear();
+        });
+        
+        function updateSelection(e) {
+            // Update selection box
+            const x = Math.min(selectionStart.x, e.clientX);
+            const y = Math.min(selectionStart.y, e.clientY);
+            const width = Math.abs(e.clientX - selectionStart.x);
+            const height = Math.abs(e.clientY - selectionStart.y);
+            
+            selectionBox.style.left = x + 'px';
+            selectionBox.style.top = y + 'px';
+            selectionBox.style.width = width + 'px';
+            selectionBox.style.height = height + 'px';
+            
+            // Check which apples are in the selection
+            const selectionRect = {
+                left: x,
+                top: y,
+                right: x + width,
+                bottom: y + height
+            };
+            
+            selectedApples.clear();
+            
+            document.querySelectorAll('.apple').forEach(appleEl => {
+                const index = parseInt(appleEl.dataset.index);
+                const apple = apples[index];
+                
+                if (apple.removed) return;
+                
+                const rect = appleEl.getBoundingClientRect();
+                const appleCenter = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+                
+                const isInSelection = 
+                    appleCenter.x >= selectionRect.left &&
+                    appleCenter.x <= selectionRect.right &&
+                    appleCenter.y >= selectionRect.top &&
+                    appleCenter.y <= selectionRect.bottom;
+                
+                if (isInSelection) {
+                    selectedApples.add(index);
+                    appleEl.classList.add('selected');
+                } else {
+                    appleEl.classList.remove('selected');
+                }
+            });
+            
+            // Update sum indicator
+            if (selectedApples.size > 0) {
+                const sum = calculateSum();
+                sumIndicator.style.display = 'block';
+                sumIndicator.style.left = (e.clientX + 20) + 'px';
+                sumIndicator.style.top = (e.clientY - 40) + 'px';
+                sumIndicator.textContent = `합: ${sum}`;
+                
+                sumIndicator.classList.remove('valid', 'invalid');
+                if (sum === TARGET_SUM) {
+                    sumIndicator.classList.add('valid');
+                    sumIndicator.textContent = `합: ${sum} ✓`;
+                } else if (sum > TARGET_SUM) {
+                    sumIndicator.classList.add('invalid');
+                }
+            } else {
+                sumIndicator.style.display = 'none';
+            }
+        }
+        
+        function calculateSum() {
+            let sum = 0;
+            selectedApples.forEach(index => {
+                sum += apples[index].number;
+            });
+            return sum;
+        }
+        
+        function removeSelectedApples() {
+            const count = selectedApples.size;
+            combo++;
+            
+            // Calculate score with combo bonus
+            const basePoints = count * 10;
+            const comboBonus = Math.floor(basePoints * (combo - 1) * 0.5);
+            const totalPoints = basePoints + comboBonus;
+            score += totalPoints;
+            
+            // Show combo popup
+            if (combo >= 2) {
+                showComboPopup(combo);
+            }
+            
+            // Animate and remove apples
+            selectedApples.forEach(index => {
+                apples[index].removed = true;
+                const el = document.querySelector(`.apple[data-index="${index}"]`);
+                if (el) {
+                    el.classList.remove('selected');
+                    el.classList.add('removing');
+                    
+                    setTimeout(() => {
+                        el.classList.add('empty');
+                        el.classList.remove('removing');
+                    }, 500);
+                }
+            });
+            
+            updateUI();
+        }
+        
+        function showComboPopup(comboCount) {
+            const popup = document.createElement('div');
+            popup.className = 'combo-popup';
+            popup.textContent = `${comboCount} COMBO! 🔥`;
+            
+            const rect = gameContainer.getBoundingClientRect();
+            popup.style.left = (rect.left + rect.width / 2 - 100) + 'px';
+            popup.style.top = (rect.top + rect.height / 2) + 'px';
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 1000);
+        }
+        
+        // Hint system
+        function findHint() {
+            const availableApples = apples.filter(a => !a.removed);
+            
+            // Try to find combinations that sum to 10
+            for (let i = 0; i < availableApples.length; i++) {
+                for (let j = i; j < availableApples.length; j++) {
+                    // Check rectangular selections
+                    const startRow = Math.min(availableApples[i].row, availableApples[j].row);
+                    const endRow = Math.max(availableApples[i].row, availableApples[j].row);
+                    const startCol = Math.min(availableApples[i].col, availableApples[j].col);
+                    const endCol = Math.max(availableApples[i].col, availableApples[j].col);
+                    
+                    let sum = 0;
+                    let indices = [];
+                    let valid = true;
+                    
+                    for (let r = startRow; r <= endRow && valid; r++) {
+                        for (let c = startCol; c <= endCol && valid; c++) {
+                            const idx = r * COLS + c;
+                            if (apples[idx].removed) {
+                                valid = false;
+                            } else {
+                                sum += apples[idx].number;
+                                indices.push(idx);
+                            }
+                        }
+                    }
+                    
+                    if (valid && sum === TARGET_SUM) {
+                        return indices;
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        function showHint() {
+            const hint = findHint();
+            
+            if (hint) {
+                // Highlight hint apples temporarily
+                hint.forEach(index => {
+                    const el = document.querySelector(`.apple[data-index="${index}"]`);
+                    if (el) {
+                        el.classList.add('selected');
+                        setTimeout(() => el.classList.remove('selected'), 1500);
+                    }
+                });
+            } else {
+                // No valid moves - might need new game
+                alert('가능한 조합이 없습니다! 새 게임을 시작해보세요.');
+            }
+        }
+        
+        // Event listeners
+        newGameBtn.addEventListener('click', initGame);
+        hintBtn.addEventListener('click', showHint);
+        
+        // Prevent context menu on right-click
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Start game
+        initGame();
+    </script>
+</body>
+</html>
